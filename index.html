@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tap 25 Challenge</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        .scale-95 {
+            transform: scale(0.95);
+        }
+        .pointer-events-none {
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-indigo-600 to-purple-700 text-white flex items-center justify-center p-4">
+
+    <div class="max-w-md w-full bg-white/10 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 overflow-hidden relative">
+        
+        <!-- Header -->
+        <div class="p-6 text-center border-b border-white/10">
+            <h1 class="text-3xl font-bold tracking-tight mb-2 text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-orange-400">
+                TAP 25
+            </h1>
+            <p class="text-white/70 text-sm">Focus Test & Secret Message</p>
+        </div>
+
+        <!-- Content Area -->
+        <div class="p-6" id="game-container">
+            
+            <!-- WELCOME SCREEN -->
+            <div id="screen-welcome" class="text-center space-y-8 py-8">
+                <div class="space-y-4">
+                    <div class="w-20 h-20 bg-indigo-500 rounded-full flex items-center justify-center mx-auto shadow-lg animate-bounce text-white">
+                        <i data-lucide="play" class="w-10 h-10 ml-1"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold">Are you focused?</h2>
+                    <p class="text-indigo-100">Tap numbers 1 to 25 in order as fast as you can to unlock the secret message.</p>
+                </div>
+                <button onclick="startGame()" class="w-full py-4 bg-yellow-400 hover:bg-yellow-300 text-indigo-900 font-bold rounded-xl shadow-lg transform transition active:scale-95 text-lg flex items-center justify-center gap-2">
+                    Start Challenge <i data-lucide="play" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- GAME SCREEN -->
+            <div id="screen-playing" class="space-y-6 hidden">
+                <div class="flex justify-between items-center px-4 py-2 bg-black/20 rounded-lg">
+                    <div class="text-center">
+                        <span class="text-xs uppercase text-white/50 block">Next</span>
+                        <span id="next-number-display" class="text-2xl font-bold text-yellow-400">1</span>
+                    </div>
+                    <div class="text-center">
+                        <span class="text-xs uppercase text-white/50 block">Time</span>
+                        <span id="timer-display" class="text-2xl font-mono font-bold">0.0s</span>
+                    </div>
+                </div>
+
+                <div id="grid-container" class="grid grid-cols-5 gap-2 sm:gap-3">
+                    <!-- Buttons will be injected here via JS -->
+                </div>
+            </div>
+
+            <!-- WON SCREEN -->
+            <div id="screen-won" class="text-center space-y-6 py-4 hidden">
+                <div class="mx-auto text-yellow-400 drop-shadow-lg animate-pulse flex justify-center">
+                    <i data-lucide="trophy" class="w-24 h-24"></i>
+                </div>
+                <div>
+                    <h2 class="text-3xl font-bold mb-2">Great Job!</h2>
+                    <p class="text-xl">Your Time: <span id="final-time" class="font-mono text-yellow-300 font-bold">0.0s</span></p>
+                </div>
+                
+                <div class="p-4 bg-black/20 rounded-xl border border-white/10">
+                    <div class="mx-auto mb-2 text-white/50 flex justify-center">
+                        <i data-lucide="lock" class="w-8 h-8"></i>
+                    </div>
+                    <p class="text-sm text-white/70 mb-4">Secret message unlocked</p>
+                    <button onclick="showReveal()" class="w-full py-3 bg-green-500 hover:bg-green-400 text-white font-bold rounded-lg shadow-lg transform transition active:scale-95 flex items-center justify-center gap-2">
+                        <i data-lucide="unlock" class="w-5 h-5"></i> Reveal Message
+                    </button>
+                </div>
+
+                <button onclick="resetGame()" class="text-white/50 hover:text-white text-sm underline flex items-center justify-center gap-1 mx-auto">
+                    <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> Play Again
+                </button>
+            </div>
+
+            <!-- REVEAL SCREEN -->
+            <div id="screen-reveal" class="text-center space-y-4 hidden">
+                <h2 class="text-2xl font-bold animate-pulse text-yellow-300">Important Message!</h2>
+                
+                <div class="relative w-full aspect-[9/16] max-h-[60vh] mx-auto bg-black rounded-xl overflow-hidden shadow-2xl border-4 border-yellow-400">
+                    <!-- Local Video Player -->
+                    <video id="secret-video" class="w-full h-full absolute inset-0 object-cover" controls>
+                        <source src="video.mp4" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+
+                <div class="pt-4">
+                    <button onclick="resetGame()" class="px-6 py-2 bg-white/10 hover:bg-white/20 rounded-full text-sm font-medium transition-colors">
+                        Back to Game
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // Game State
+        let gameState = 'welcome'; // welcome, playing, won, reveal
+        let grid = [];
+        let nextNumber = 1;
+        let startTime = null;
+        let timerInterval = null;
+
+        // Initialize Icons
+        lucide.createIcons();
+
+        function switchScreen(screenName) {
+            ['welcome', 'playing', 'won', 'reveal'].forEach(s => {
+                document.getElementById(`screen-${s}`).classList.add('hidden');
+            });
+            document.getElementById(`screen-${screenName}`).classList.remove('hidden');
+            
+            // Re-initialize icons for newly visible elements
+            lucide.createIcons();
+        }
+
+        function startGame() {
+            // Generate numbers 1-25
+            const numbers = Array.from({ length: 25 }, (_, i) => i + 1);
+            
+            // Fisher-Yates shuffle
+            for (let i = numbers.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [numbers[i], numbers[j]] = [numbers[j], numbers[i]];
+            }
+
+            grid = numbers;
+            nextNumber = 1;
+            startTime = Date.now();
+            
+            // Update UI
+            document.getElementById('next-number-display').innerText = nextNumber;
+            document.getElementById('timer-display').innerText = '0.0s';
+            renderGrid();
+            switchScreen('playing');
+
+            // Start Timer
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+                document.getElementById('timer-display').innerText = elapsed + 's';
+            }, 50);
+        }
+
+        function renderGrid() {
+            const container = document.getElementById('grid-container');
+            container.innerHTML = ''; // Clear existing
+
+            grid.forEach(num => {
+                const btn = document.createElement('button');
+                btn.innerText = num;
+                btn.className = `aspect-square rounded-lg font-bold text-lg sm:text-xl flex items-center justify-center transition-all duration-100 shadow-lg border border-white/10 select-none`;
+                
+                // State based styling
+                if (num < nextNumber) {
+                    // Already clicked
+                    btn.className += ' opacity-0 scale-50 pointer-events-none';
+                } else if (num === nextNumber) {
+                    // Next target
+                    btn.className += ' bg-white/30 ring-2 ring-yellow-400 hover:bg-white/40 active:scale-90';
+                } else {
+                    // Normal button
+                    btn.className += ' bg-white/20 hover:bg-white/30 active:scale-90';
+                }
+
+                btn.onclick = () => handleNumberClick(num);
+                container.appendChild(btn);
+            });
+        }
+
+        function handleNumberClick(num) {
+            if (num === nextNumber) {
+                if (num === 25) {
+                    // Win Condition
+                    gameWon();
+                } else {
+                    nextNumber++;
+                    document.getElementById('next-number-display').innerText = nextNumber;
+                    renderGrid(); // Re-render to update styles
+                }
+            }
+        }
+
+        function gameWon() {
+            clearInterval(timerInterval);
+            const finalTime = ((Date.now() - startTime) / 1000).toFixed(1);
+            document.getElementById('final-time').innerText = finalTime + 's';
+            switchScreen('won');
+        }
+
+        function showReveal() {
+            switchScreen('reveal');
+            const video = document.getElementById('secret-video');
+            video.currentTime = 0;
+            video.play().catch(e => console.log("Auto-play prevented:", e));
+        }
+
+        function resetGame() {
+            clearInterval(timerInterval);
+            const video = document.getElementById('secret-video');
+            video.pause();
+            switchScreen('welcome');
+        }
+    </script>
+</body>
+</html>
