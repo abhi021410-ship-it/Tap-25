@@ -103,10 +103,16 @@ Store scores in localStorage
 
 If you want any of these, I can build the code for you.
 
-👤 Author
+## 👨‍💻 Author
 
-M Abhiram Reddy
-GitHub: https://github.com/abhi021410-ship-it
+**M. Abhiram Reddy**
+
+B.Tech – Artificial Intelligence & Data Science
+
+- GitHub: https://github.com/abhi021410-ship-it
+- LinkedIn: https://www.linkedin.com/in/abhiram-reddy-7470b6344/
+
+---
 
 If you want:
 🎨 Social preview card for this project
